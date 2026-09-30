@@ -1,6 +1,18 @@
-# HarborWatch 3D
+<p align="center">
+  <img src="./hw3d-logo.png" alt="HarborWatch 3D" width="320" />
+</p>
 
-**Real-Time Sensor Fusion & Geospatial Operations Platform**
+<h1 align="center">HarborWatch 3D</h1>
+
+<p align="center">
+  <strong>Real-Time Sensor Fusion &amp; Geospatial Operations Platform</strong>
+</p>
+
+<p align="center">
+  <img alt="navy" src="https://img.shields.io/badge/navy-%23002C54.svg?style=flat-square&labelColor=002C54&color=002C54" />
+  <img alt="sea" src="https://img.shields.io/badge/sea-%23006098.svg?style=flat-square&labelColor=006098&color=006098" />
+  <img alt="teal" src="https://img.shields.io/badge/teal-%2300A0B8.svg?style=flat-square&labelColor=00A0B8&color=00A0B8" />
+</p>
 
 HarborWatch 3D is a reference implementation of a secure, account-based application for visualizing real-time sensor-derived object tracks in a 3D geospatial environment.
 
@@ -166,12 +178,26 @@ interface SensorTelemetry {
 - Shared schemas between edge, API, and frontend teams
 - Adaptive presentation: persistent sidebar on desktop, drawer on tablet, bottom sheet on phone
 
+## Palette
+
+Taken from [`hw3d-logo.png`](./hw3d-logo.png). No gold.
+
+| Token | Hex |
+|---|---|
+| Navy (wordmark) | `#002C54` |
+| Sea | `#006098` |
+| Teal (3D accent) | `#00A0B8` |
+| Beam | `#ACE0E8` |
+| Mist | `#E8F8F8` |
+
 ## Documentation
 
-- [Architecture](./docs/architecture.md)
-- [Data flow](./docs/data-flow.md)
-- [Security](./docs/security.md)
-- [Deployment](./docs/deployment.md)
+- [Documentation index](./docs/README.md)
+- [Architecture overview](./docs/architecture/overview.md)
+- [Data flow](./docs/architecture/data-flow.md)
+- [Security](./docs/architecture/security.md)
+- [Deployment](./docs/architecture/deployment.md)
+- [System diagrams](./docs/diagrams/system-overview.md)
 
 ## Project Scope
 
