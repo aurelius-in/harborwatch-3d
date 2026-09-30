@@ -30,7 +30,7 @@ flowchart TB
   api["Node streaming gateway<br/>apps/api"]
   ws["WebSockets<br/>tracks · telemetry · status"]
   web["React PWA<br/>apps/web"]
-  scene["ArcGIS SceneView<br/>StreamLayer"]
+  scene["ArcGIS SceneView or<br/>3D harbor fallback"]
 
   lidar -.->|"real deployment"| detect
   detect -.->|"normalized tracks"| api

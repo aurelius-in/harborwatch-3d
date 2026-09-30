@@ -17,12 +17,14 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run typecheck",
     "test": "npm run test -w @harborwatch/contracts && npm run test -w @harborwatch/api && npm run test -w @harborwatch/web && python -m pytest services/edge-simulator -q",
-    "test:unit": "npm run test -w @harborwatch/contracts && npm run test -w @harborwatch/api && npm run test -w @harborwatch/web"
+    "test:unit": "npm run test -w @harborwatch/contracts && npm run test -w @harborwatch/api && npm run test -w @harborwatch/web",
+    "test:e2e": "playwright test"
   },
   "engines": {
     "node": ">=18"
   },
   "devDependencies": {
+    "@playwright/test": "^1.51.1",
     "concurrently": "^9.1.2"
   }
 }

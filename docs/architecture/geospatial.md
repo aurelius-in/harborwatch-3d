@@ -10,7 +10,7 @@
 
 The map is an ArcGIS **SceneView** when `VITE_ARCGIS_API_KEY` is set. Without a key, HarborWatch mounts a built-in WebGL harbor that still draws live tracks, trails, sensors, zones, and devices in the logo palette. The track store is the same either way.
 
-The default camera looks at the fictional **Alder Harbor** extent used by the simulator. The application does not ship operational charts.
+The default camera looks at the selected site. Sites are fictional **Alder Harbor** and **Cedar Inlet**. The application does not ship operational charts.
 
 <table>
 <tr>
@@ -25,16 +25,18 @@ The default camera looks at the fictional **Alder Harbor** extent used by the si
 
 ## StreamLayer
 
-`StreamLayer` is the production binding to an Esri stream service. This repository's live object layer:
+`StreamLayer` is the production binding a GIS team would use against an Esri stream service. This repository does not mount StreamLayer.
+
+What it does instead:
 
 - Subscribes to `/ws/tracks`.
 - Groups observations by `track_id` in the client track store.
-- On ArcGIS, upserts graphics by `track_id` (the StreamLayer adapter).
-- On the built-in harbor scene, moves meshes by the same IDs.
-- Applies purge and maximum-age rules so the browser does not accumulate thousands of old points.
+- On ArcGIS SceneView (when a key is present), upserts graphics by `track_id`, plus extra graphics for trails, sensors, zones, and devices.
+- On the built-in harbor scene, moves meshes by the same IDs and interpolates pose.
+- Expires tracks server-side (`EXPIRE_MS`) and dims them after `STALE_MS`.
 - Renders 3D symbols by `object_type`.
 
-Trails are either StreamLayer track history or a companion graphics layer fed from the same store. Layer toggle **Track History** controls visibility.
+Layer toggle **Track History** controls trail visibility.
 
 ## Coordinate contract
 
@@ -52,12 +54,12 @@ If a future edge feed uses a local projected frame, the **API ingest adapter** c
 
 | Layer | Source | Toggle |
 |---|---|---|
-| Object Tracks | StreamLayer | Object Tracks |
-| Track History | Stream history or trail graphics | Track History |
-| Sensors | Feature layer from `/api/sensors` | Sensors |
-| Environmental Data | Overlay from telemetry (wind barbs, visibility tint) | Environmental Data |
-| Restricted Zones | Site GeoJSON from config | Restricted Zones |
-| Device Locations | GPS of edge cabinets or patrol units | Device Locations |
+| Object Tracks | Track store / SceneView graphics or WebGL meshes | Object Tracks |
+| Track History | Trail graphics from the same store | Track History |
+| Sensors | `/api/sensors` plus telemetry socket | Sensors |
+| Environmental Data | Overlay from telemetry (wind marker, visibility haze) | Environmental Data |
+| Restricted Zones | Site GeoJSON from `/api/sites` | Restricted Zones |
+| Device Locations | GPS of edge cabinets from `/api/devices` | Device Locations |
 
 Restricted-zone hits are evaluated on the API (Operator+). The map only draws the polygons and alert badges.
 
@@ -66,7 +68,7 @@ Restricted-zone hits are evaluated on the API (Operator+). The map only draws th
 - Click or tap a track: select ID, open inspector.
 - Hover on desktop: tooltip with type and speed.
 - Touch targets on phone are large. The inspector is a bottom sheet.
-- Camera bookmarks per site (Admin can save).
+- Camera per site from `SiteConfiguration.default_camera`. Admin can rename a site. Camera bookmarks are not persisted.
 
 ## Symbology
 

@@ -38,15 +38,15 @@ Status values: **Accepted**, **Proposed**, **Superseded**.
 
 **Consequences.** CI contract tests become the handshake. Field renames are major versions.
 
-## ADR-004. StreamLayer plus custom WebSocket
+## ADR-004. SceneView graphics or WebGL harbor, custom WebSocket
 
 **Status:** Accepted
 
-**Context.** Hundreds of moving objects need track identity, purge, and a custom data source.
+**Context.** Hundreds of moving objects need track identity, purge, and a custom data source. Esri StreamLayer is the GIS-team contract, but this repo must demo without a key.
 
-**Decision.** Live positions go through `/ws/tracks` into ArcGIS `StreamLayer` on a `SceneView`. REST is for config, session, and history.
+**Decision.** Live positions go through `/ws/tracks` into a client track store. ArcGIS SceneView upserts graphics by `track_id` when a key is present. Otherwise the built-in WebGL harbor consumes the same store. REST is for config, session, history, and admin.
 
-**Consequences.** We adopt StreamLayer's track and purge model instead of creating Graphics on a timer.
+**Consequences.** Reviewers can judge motion, RBAC, and layout without a GIS license. A GIS specialist can still bind StreamLayer later to the same socket contract.
 
 ## ADR-005. Viewer, Operator, Admin
 

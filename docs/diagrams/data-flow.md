@@ -25,7 +25,7 @@ flowchart LR
   h["Sampled history"]
   s["/ws/tracks"]
   t["Client track store"]
-  l["StreamLayer"]
+  l["3D board"]
 
   e --> c --> i --> b
   b --> s --> t --> l
@@ -105,7 +105,7 @@ sequenceDiagram
   API->>API: schema, RBAC, seq
   API->>WS: fan-out to site subscribers
   WS->>Web: upsert by track_id
-  Web->>SV: StreamLayer observation
+  Web->>SV: upsert graphic or mesh by track_id
 ```
 
 ## Related

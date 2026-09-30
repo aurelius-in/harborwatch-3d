@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
+  isAlertKind,
   parseEnvelope,
   parseTrackUpdate,
   SCHEMA,
@@ -39,5 +40,12 @@ describe("TrackUpdate contract", () => {
     };
     broken.payload.confidence = 1.4;
     expect(() => parseEnvelope(broken, parseTrackUpdate)).toThrow(/confidence/);
+  });
+
+  it("names the operational alert kinds", () => {
+    expect(isAlertKind("restricted_zone")).toBe(true);
+    expect(isAlertKind("low_visibility")).toBe(true);
+    expect(isAlertKind("stale_sensor")).toBe(true);
+    expect(isAlertKind("not-an-alert")).toBe(false);
   });
 });

@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
-import type { DeviceStatus } from "@harborwatch/contracts";
+import type { DeviceStatus, RestrictedZone } from "@harborwatch/contracts";
 import type { LayerState } from "../lib/store";
 import type { SensorRecord, TrackRecord } from "../lib/api";
+import type { GeoOrigin } from "../lib/geo";
 import { HarborWorld } from "./harborWorld";
 
 interface Props {
@@ -12,6 +13,8 @@ interface Props {
   selectedId: string | null;
   windDir: number;
   visibility: number;
+  origin: GeoOrigin;
+  zones: RestrictedZone[];
   onSelect: (id: string | null) => void;
 }
 
@@ -21,7 +24,11 @@ export function HarborScene(props: Props) {
 
   useEffect(() => {
     if (!hostRef.current) return;
-    const world = new HarborWorld(hostRef.current, { onSelect: props.onSelect });
+    const world = new HarborWorld(hostRef.current, {
+      onSelect: props.onSelect,
+      origin: props.origin,
+      zones: props.zones,
+    });
     worldRef.current = world;
     return () => {
       world.dispose();

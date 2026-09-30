@@ -33,9 +33,8 @@ Do not log access tokens, ArcGIS keys, or raw passwords. Do not log full track p
 | `hw_tracks_dropped_total` | counter | Validation or throttle drops |
 | `hw_ws_clients` | gauge | Connected browsers per site |
 | `hw_track_board_size` | gauge | Active tracks in memory |
-| `hw_ingest_lag_ms` | histogram | Event time vs receive time |
+| `hw_ingest_lag_ms_count` / `_sum` | counter | Event time vs receive time |
 | `hw_ws_send_errors_total` | counter | Fan-out failures |
-| `hw_db_history_write_ms` | histogram | History path health |
 
 The web app can expose a debug overlay for Admin: last socket timestamp, board size, and SceneView frame time.
 

@@ -17,11 +17,11 @@ npm run build
 `npm test` runs:
 
 1. Golden `TrackUpdate` fixtures in `packages/contracts`
-2. API board, RBAC, login, and ingest tests (`apps/api`)
-3. `RoleGate` UI tests (`apps/web`)
+2. API board, RBAC, login, ingest, history, alerts, site filter, and WebSocket snapshot tests (`apps/api`)
+3. `RoleGate`, login page, and interpolation tests (`apps/web`)
 4. The same fixture parsed in Python (`services/edge-simulator`)
 
-CI is `.github/workflows/ci.yml`.
+`npm run test:e2e` runs Playwright against a live API and Vite dev server. CI runs both.
 
 ## Layers
 
@@ -30,7 +30,7 @@ CI is `.github/workflows/ci.yml`.
 | Unit | `apps/api/src/*.test.ts`, `apps/web` | RBAC, stale expiry, seq discard, RoleGate |
 | Contract | `packages/contracts`, `services/edge-simulator` | Fixture JSON parses on Node and Python |
 | Integration | `apps/api` HTTP tests | Login, ingest key, live board |
-| E2E | Manual / future Playwright | Login, see tracks, open inspector, toggle layer |
+| E2E | `tests/e2e` Playwright | Login, site switch, inspector, viewer has no Ack |
 | Load | Optional k6 or locust | Fan-out under 200 clients / 200 tracks |
 
 ## Contract tests
@@ -45,6 +45,8 @@ The API test harness boots Express against the in-memory store:
 2. Viewer is rejected from `POST /api/alerts/:id/ack`.
 3. Ingest without `X-Ingest-Key` returns 401.
 4. Ingest with the key upserts `TRK-0099` on the site board.
+5. Operator can ack a zone alert and read history. Viewer cannot.
+6. Cedar Inlet tracks do not appear on Alder Harbor `GET /api/tracks`.
 
 Docker Compose is the full path: API, simulator, Postgres, and the web console.
 

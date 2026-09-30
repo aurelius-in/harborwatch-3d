@@ -13,7 +13,7 @@
 3. The track broker updates an in-memory site board and enqueues a sampled history write.
 4. Subscribed browsers on `/ws/tracks` receive the same event.
 5. The client track store upserts by `track_id`.
-6. ArcGIS `StreamLayer` moves the existing graphic and extends the trail.
+6. The WebGL harbor or ArcGIS SceneView graphics move the existing object and extend the trail.
 7. The inspector, if that ID is selected, refreshes attributes.
 
 Telemetry and status use the same ingest-to-socket shape on `/ws/telemetry` and `/ws/status`.
@@ -39,7 +39,7 @@ sequenceDiagram
   participant API as Node API
   participant WS as Track socket
   participant Store as Client track store
-  participant GIS as StreamLayer
+  participant GIS as Scene / WebGL
 
   Edge->>API: TrackUpdate
   API->>API: validate + site ACL

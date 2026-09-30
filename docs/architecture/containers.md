@@ -127,7 +127,7 @@ Stores users, site configuration, sensor registry, and historical track samples.
 
 ## Streaming
 
-The API owns the fan-out. StreamLayer on the client can bind a custom WebSocket. Track IDs, purge rules, and update-rate controls live in that path. See [realtime streaming](./realtime-streaming.md).
+The API owns the fan-out. The client track store binds `/ws/tracks`. ArcGIS SceneView upserts graphics when a key is present. StreamLayer is a future GIS-team bind, not mounted here. See [realtime streaming](./realtime-streaming.md).
 
 ## Related
 

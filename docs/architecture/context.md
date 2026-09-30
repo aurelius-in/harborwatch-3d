@@ -37,7 +37,7 @@ HarborWatch 3D is the **application system**: browser console, streaming API, sh
 | System | Direction | Why it exists |
 |---|---|---|
 | Edge detection and tracking | In | Real deployments emit normalized tracks. The simulator stands in. |
-| ArcGIS platform | Out | SceneView, basemaps, StreamLayer rendering |
+| ArcGIS platform | Out | SceneView, basemaps. StreamLayer is a future GIS bind. |
 | Identity provider | In | OAuth / OIDC login (adapter in `packages/auth`) |
 | PostgreSQL | Out | Users, sites, configuration, track history |
 | Email or paging (optional) | Out | Alert escalation in production, not required locally |
@@ -70,7 +70,7 @@ flowchart LR
   operator --> hw
   admin --> hw
   edge -->|"TrackUpdate, telemetry"| hw
-  hw -->|"SceneView, StreamLayer"| gis
+  hw -->|"SceneView or WebGL"| gis
   idp -->|"OIDC tokens"| hw
   hw --> db
 

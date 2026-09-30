@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import os
 import time
-
 from pathlib import Path
 import sys
 
@@ -15,20 +14,27 @@ from aiohttp import ClientSession, ClientTimeout, web
 
 from contracts import SCHEMA_DEVICE, SCHEMA_ENV, SCHEMA_SENSOR, envelope
 from scenario import (
-    DEVICES,
-    SENSORS,
-    SITE_ID,
+    SITES,
+    Weather,
     build_movers,
     device_payload,
     environment_payload,
     sensor_payload,
     step_mover,
+    weather_front,
 )
 
 API_URL = os.environ.get("API_URL", "http://localhost:5000").rstrip("/")
 INGEST_KEY = os.environ.get("INGEST_KEY", "harborwatch-ingest-dev")
 TRACK_COUNT = int(os.environ.get("TRACK_COUNT", "48"))
 PORT = int(os.environ.get("SIMULATOR_PORT", "8000"))
+SITE_IDS = [
+    item.strip()
+    for item in os.environ.get("SITE_IDS", os.environ.get("SITE_ID", "alder-harbor,cedar-inlet")).split(",")
+    if item.strip() and item.strip() in SITES
+]
+if not SITE_IDS:
+    SITE_IDS = ["alder-harbor"]
 
 started = time.time()
 ok_ingests = 0
@@ -57,7 +63,11 @@ async def post_ingest(session: ClientSession, body: dict) -> None:
 
 
 async def run_loop(session: ClientSession) -> None:
-    movers = build_movers(TRACK_COUNT)
+    fleets: dict[str, list] = {}
+    weather = {site_id: Weather() for site_id in SITE_IDS}
+    for index, site_id in enumerate(SITE_IDS):
+        count = TRACK_COUNT if index == 0 else max(20, TRACK_COUNT // 2)
+        fleets[site_id] = build_movers(count, site_id)
     t0 = time.time()
     flap_until = 0.0
     flap_sensor: str | None = None
@@ -66,40 +76,53 @@ async def run_loop(session: ClientSession) -> None:
         elapsed = time.time() - t0
         now = time.time()
         if now > flap_until:
-            if tick % 400 == 80:
-                flap_sensor = SENSORS[tick % len(SENSORS)]["sensor_id"]
-                flap_until = now + 12
+            if tick % 280 == 40:
+                site = SITES[SITE_IDS[tick % len(SITE_IDS)]]
+                flap_sensor = site["sensors"][tick % len(site["sensors"])]["sensor_id"]
+                flap_until = now + 14
             else:
                 flap_sensor = None
-        tasks = [post_ingest(session, step_mover(mover, elapsed)) for mover in movers]
-        if tick % 8 == 0:
-            for sensor in SENSORS:
+        tasks = []
+        for site_id, movers in fleets.items():
+            wx = weather_front(elapsed + (0 if site_id == "alder-harbor" else 22), weather[site_id])
+            for mover in movers:
+                body = step_mover(mover, elapsed)
+                if body is not None:
+                    tasks.append(post_ingest(session, body))
+            if tick % 8 == 0:
+                for sensor in SITES[site_id]["sensors"]:
+                    tasks.append(
+                        post_ingest(
+                            session,
+                            envelope(
+                                "sensor_telemetry",
+                                SCHEMA_SENSOR,
+                                site_id,
+                                sensor_payload(site_id, sensor["sensor_id"], flap_sensor, wx),
+                            ),
+                        )
+                    )
                 tasks.append(
                     post_ingest(
                         session,
-                        envelope(
-                            "sensor_telemetry",
-                            SCHEMA_SENSOR,
-                            SITE_ID,
-                            sensor_payload(sensor["sensor_id"], flap_sensor),
-                        ),
+                        envelope("environment", SCHEMA_ENV, site_id, environment_payload(site_id, wx)),
                     )
                 )
-            tasks.append(
-                post_ingest(
-                    session,
-                    envelope("environment", SCHEMA_ENV, SITE_ID, environment_payload()),
-                )
-            )
-        if tick % 15 == 0:
-            for device in DEVICES:
-                tasks.append(
-                    post_ingest(
-                        session,
-                        envelope("device_status", SCHEMA_DEVICE, SITE_ID, device_payload(device)),
+            if tick % 15 == 0:
+                for device in SITES[site_id]["devices"]:
+                    tasks.append(
+                        post_ingest(
+                            session,
+                            envelope(
+                                "device_status",
+                                SCHEMA_DEVICE,
+                                site_id,
+                                device_payload(site_id, device, elapsed),
+                            ),
+                        )
                     )
-                )
-        await asyncio.gather(*tasks)
+        if tasks:
+            await asyncio.gather(*tasks)
         tick += 1
         await asyncio.sleep(0.45)
 
@@ -109,7 +132,7 @@ async def health(_request: web.Request) -> web.Response:
         {
             "status": "ok" if last_error is None or ok_ingests > 0 else "degraded",
             "service": "edge-simulator",
-            "site_id": SITE_ID,
+            "site_ids": SITE_IDS,
             "track_count": TRACK_COUNT,
             "ok_ingests": ok_ingests,
             "failed_ingests": failed_ingests,

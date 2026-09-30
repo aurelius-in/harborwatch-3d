@@ -39,7 +39,7 @@
 | Component | Owns | Does not own |
 |---|---|---|
 | `SceneShell` | Camera, harbor extent, SceneView or 3D harbor fallback | Track generation |
-| `TrackStreamLayer` | Track store, `track_id` grouping, trails, ArcGIS graphics adapter | Auth tokens (receives them) |
+| `TrackBoard` | Track store, `track_id` grouping, trails, ArcGIS graphics or WebGL meshes | Auth tokens (receives them) |
 | `LayerToggles` | Object Tracks, History, Sensors, Environment, Zones, Devices | Server-side filter policy |
 | `TrackInspector` | Selected track fields | Fusion logic |
 | `TelemetryPanel` | Sensor and weather cards | Device firmware |

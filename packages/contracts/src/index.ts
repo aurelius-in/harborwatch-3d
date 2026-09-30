@@ -4,6 +4,7 @@ export const SCHEMA = {
   environment: "harborwatch.environment/1",
   device_status: "harborwatch.device_status/1",
   alert: "harborwatch.alert/1",
+  track_expire: "harborwatch.track_expire/1",
 } as const;
 
 export type ObjectType = "vessel" | "vehicle" | "person" | "unknown";
@@ -15,7 +16,16 @@ export type EnvelopeType =
   | "sensor_telemetry"
   | "environment"
   | "device_status"
-  | "alert";
+  | "alert"
+  | "track_expire";
+export type AlertKind =
+  | "sensor_offline"
+  | "restricted_zone"
+  | "stale_ingest"
+  | "unknown_contact"
+  | "low_visibility"
+  | "stale_sensor";
+export type AlertSeverity = "info" | "warning" | "critical";
 
 export interface GeoJsonPolygon {
   type: "Polygon";
@@ -78,16 +88,18 @@ export interface DeviceStatus {
   last_heartbeat: string;
 }
 
+export interface RestrictedZone {
+  zone_id: string;
+  name: string;
+  polygon: GeoJsonPolygon;
+}
+
 export interface SiteConfiguration {
   site_id: string;
   name: string;
   extent: { xmin: number; ymin: number; xmax: number; ymax: number };
   default_camera?: { longitude: number; latitude: number; height: number };
-  restricted_zones: Array<{
-    zone_id: string;
-    name: string;
-    polygon: GeoJsonPolygon;
-  }>;
+  restricted_zones: RestrictedZone[];
 }
 
 export interface UserSession {
@@ -100,8 +112,8 @@ export interface UserSession {
 export interface AlertEvent {
   alert_id: string;
   site_id: string;
-  kind: "sensor_offline" | "restricted_zone" | "stale_ingest" | "unknown_contact";
-  severity: "info" | "warning" | "critical";
+  kind: AlertKind;
+  severity: AlertSeverity;
   message: string;
   track_id?: string;
   sensor_id?: string;
@@ -109,8 +121,39 @@ export interface AlertEvent {
   created_at: string;
 }
 
+export interface AuditEvent {
+  id?: number | string;
+  actor: string;
+  action: string;
+  site_id: string;
+  target: string;
+  timestamp: string;
+}
+
+export interface TrackExpirePayload {
+  track_ids: string[];
+}
+
+export interface HistoryPoint {
+  track_id: string;
+  site_id: string;
+  latitude: number;
+  longitude: number;
+  speed_mps: number;
+  heading: number;
+  timestamp: string;
+}
+
 export const OBJECT_TYPES: ObjectType[] = ["vessel", "vehicle", "person", "unknown"];
 export const ROLES: Role[] = ["viewer", "operator", "admin"];
+export const ALERT_KINDS: AlertKind[] = [
+  "sensor_offline",
+  "restricted_zone",
+  "stale_ingest",
+  "unknown_contact",
+  "low_visibility",
+  "stale_sensor",
+];
 
 export function isObjectType(value: string): value is ObjectType {
   return OBJECT_TYPES.includes(value as ObjectType);
@@ -118,6 +161,10 @@ export function isObjectType(value: string): value is ObjectType {
 
 export function isRole(value: string): value is Role {
   return ROLES.includes(value as Role);
+}
+
+export function isAlertKind(value: string): value is AlertKind {
+  return ALERT_KINDS.includes(value as AlertKind);
 }
 
 export function requiredString(value: unknown, field: string): string {

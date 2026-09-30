@@ -67,7 +67,7 @@ Callout convention used across this set:
 | [Components](./architecture/components.md) | Responsibilities and team boundaries |
 | [Data flow](./architecture/data-flow.md) | Edge-to-browser event path |
 | [Realtime streaming](./architecture/realtime-streaming.md) | WebSockets, sequencing, reconnect, throttle, stale tracks |
-| [Geospatial](./architecture/geospatial.md) | SceneView, StreamLayer, coordinates, zones, layers |
+| [Geospatial](./architecture/geospatial.md) | SceneView, coordinates, zones, layers |
 | [Contracts](./architecture/contracts.md) | Shared event schemas and versioning |
 | [Security](./architecture/security.md) | Auth, RBAC, secrets, and auditability |
 | [Observability](./architecture/observability.md) | Logs, metrics, health, tracing, alerts |

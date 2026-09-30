@@ -4,16 +4,18 @@ import type {
   EnvironmentalTelemetry,
   SensorTelemetry,
   StreamEnvelope,
+  TrackExpirePayload,
   TrackUpdate,
 } from "@harborwatch/contracts";
 import { parseTrackUpdate, SCHEMA } from "@harborwatch/contracts";
-import { gauge, inc } from "@harborwatch/telemetry";
+import { gauge, inc, observe } from "@harborwatch/telemetry";
 import type { AppContext } from "./context.ts";
-import { pointInPolygon, SITE } from "./site.ts";
+import { getSite, knownSite, pointInPolygon } from "./site.ts";
 import { broadcast } from "./ws.ts";
 
 const HISTORY_SAMPLE_MS = 2000;
-const lastHistoryWrite = new Map<string, number>();
+const TRACK_THROTTLE_MS = 80;
+const VISIBILITY_ALERT_M = 2500;
 
 export async function handleIngest(
   ctx: AppContext,
@@ -28,7 +30,12 @@ export async function handleIngest(
     inc("hw_tracks_dropped_total");
     return { accepted: false, reason: "missing envelope fields" };
   }
+  if (!knownSite(envelope.site_id)) {
+    inc("hw_tracks_dropped_total");
+    return { accepted: false, reason: "unknown site" };
+  }
   ctx.lastIngestAt = Date.now();
+  ctx.lastIngestBySite.set(envelope.site_id, Date.now());
 
   if (envelope.type === "track") {
     return ingestTrack(ctx, envelope);
@@ -47,12 +54,35 @@ export async function handleIngest(
         acknowledged: false,
         created_at: new Date().toISOString(),
       });
+    } else if (payload.status === "degraded") {
+      await raiseAlert(ctx, {
+        alert_id: `sensor-stale-${payload.sensor_id}`,
+        site_id: envelope.site_id,
+        kind: "stale_sensor",
+        severity: "warning",
+        message: `${payload.sensor_id} is degraded`,
+        sensor_id: payload.sensor_id,
+        acknowledged: false,
+        created_at: new Date().toISOString(),
+      });
     }
     broadcast(ctx, "telemetry", envelope, envelope.site_id);
     return { accepted: true };
   }
   if (envelope.type === "environment") {
-    ctx.environment = envelope.payload as EnvironmentalTelemetry;
+    const payload = envelope.payload as EnvironmentalTelemetry;
+    ctx.environments.set(envelope.site_id, payload);
+    if (payload.visibility_meters < VISIBILITY_ALERT_M) {
+      await raiseAlert(ctx, {
+        alert_id: `low-vis-${envelope.site_id}`,
+        site_id: envelope.site_id,
+        kind: "low_visibility",
+        severity: "warning",
+        message: `Visibility ${Math.round(payload.visibility_meters)} m at ${envelope.site_id}`,
+        acknowledged: false,
+        created_at: new Date().toISOString(),
+      });
+    }
     broadcast(ctx, "telemetry", envelope, envelope.site_id);
     return { accepted: true };
   }
@@ -82,13 +112,24 @@ async function ingestTrack(
     });
     return { accepted: false, reason: "invalid TrackUpdate" };
   }
+  const throttleKey = `${envelope.site_id}:${update.track_id}`;
+  const lastWrite = ctx.lastTrackWrite.get(throttleKey) ?? 0;
+  if (Date.now() - lastWrite < TRACK_THROTTLE_MS) {
+    inc("hw_tracks_dropped_total");
+    return { accepted: false, reason: "throttled" };
+  }
   const record = ctx.board.apply(envelope.site_id, update, envelope.seq);
   if (!record) {
     inc("hw_tracks_dropped_total");
     return { accepted: false, reason: "stale seq" };
   }
+  ctx.lastTrackWrite.set(throttleKey, Date.now());
   inc("hw_tracks_ingest_total");
   gauge("hw_track_board_size", ctx.board.size());
+  const eventTime = Date.parse(update.timestamp);
+  if (Number.isFinite(eventTime)) {
+    observe("hw_ingest_lag_ms", Math.max(0, Date.now() - eventTime));
+  }
   const out: StreamEnvelope<TrackUpdate> = {
     type: "track",
     schema: SCHEMA.track,
@@ -99,11 +140,12 @@ async function ingestTrack(
   };
   broadcast(ctx, "tracks", out, envelope.site_id);
 
-  const last = lastHistoryWrite.get(update.track_id) ?? 0;
+  const last = ctx.lastHistoryWrite.get(throttleKey) ?? 0;
   if (Date.now() - last >= HISTORY_SAMPLE_MS) {
-    lastHistoryWrite.set(update.track_id, Date.now());
+    ctx.lastHistoryWrite.set(throttleKey, Date.now());
     await ctx.store.insertHistory({
       track_id: update.track_id,
+      site_id: envelope.site_id,
       latitude: update.latitude,
       longitude: update.longitude,
       speed_mps: update.speed_mps,
@@ -112,7 +154,8 @@ async function ingestTrack(
     });
   }
 
-  for (const zone of SITE.restricted_zones) {
+  const site = getSite(envelope.site_id);
+  for (const zone of site?.restricted_zones ?? []) {
     if (pointInPolygon(update.longitude, update.latitude, zone.polygon.coordinates)) {
       await raiseAlert(ctx, {
         alert_id: `zone-${zone.zone_id}-${update.track_id}`,
@@ -141,7 +184,7 @@ async function ingestTrack(
   return { accepted: true };
 }
 
-async function raiseAlert(ctx: AppContext, alert: AlertEvent): Promise<void> {
+export async function raiseAlert(ctx: AppContext, alert: AlertEvent): Promise<void> {
   await ctx.store.upsertAlert(alert);
   const envelope: StreamEnvelope<AlertEvent> = {
     type: "alert",
@@ -151,4 +194,50 @@ async function raiseAlert(ctx: AppContext, alert: AlertEvent): Promise<void> {
     payload: alert,
   };
   broadcast(ctx, "status", envelope, alert.site_id);
+}
+
+export async function checkOperationalAlerts(ctx: AppContext): Promise<void> {
+  const now = Date.now();
+  for (const siteId of ctx.board.siteIds()) {
+    const last = ctx.lastIngestBySite.get(siteId) ?? ctx.lastIngestAt;
+    if (last > 0 && now - last > 30_000) {
+      await raiseAlert(ctx, {
+        alert_id: `stale-ingest-${siteId}`,
+        site_id: siteId,
+        kind: "stale_ingest",
+        severity: "warning",
+        message: `No ingest for ${siteId} in ${Math.round((now - last) / 1000)} s`,
+        acknowledged: false,
+        created_at: new Date().toISOString(),
+      });
+    }
+  }
+  for (const sensor of ctx.sensors.values()) {
+    const age = now - Date.parse(sensor.timestamp);
+    if (Number.isFinite(age) && age > 20_000) {
+      await raiseAlert(ctx, {
+        alert_id: `sensor-stale-${sensor.sensor_id}`,
+        site_id: sensor.site_id,
+        kind: "stale_sensor",
+        severity: "warning",
+        message: `${sensor.sensor_id} telemetry is ${Math.round(age / 1000)} s old`,
+        sensor_id: sensor.sensor_id,
+        acknowledged: false,
+        created_at: new Date().toISOString(),
+      });
+    }
+  }
+}
+
+export function broadcastExpired(ctx: AppContext, siteId: string, trackIds: string[]): void {
+  if (!trackIds.length) return;
+  const envelope: StreamEnvelope<TrackExpirePayload> = {
+    type: "track_expire",
+    schema: SCHEMA.track_expire,
+    site_id: siteId,
+    sent_at: new Date().toISOString(),
+    payload: { track_ids: trackIds },
+  };
+  broadcast(ctx, "status", envelope, siteId);
+  broadcast(ctx, "tracks", envelope, siteId);
 }

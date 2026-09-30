@@ -22,7 +22,7 @@ These are engineering goals for the reference implementation, not a contractual 
 
 | Pressure | First lever |
 |---|---|
-| More tracks | Coalesce, viewport subscribe, StreamLayer purge |
+| More tracks | Throttle ingest, expire stale tracks, hide trails on phone |
 | More sites | Partition the in-memory board by `site_id` |
 | More browsers | Horizontal API + a pub/sub (Redis) for fan-out |
 | History growth | Sample, TTL, and partition by day |

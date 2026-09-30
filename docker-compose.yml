@@ -51,7 +51,7 @@ services:
       INGEST_KEY: harborwatch-ingest-dev
       TRACK_COUNT: "48"
       SIMULATOR_PORT: "8000"
-      SITE_ID: alder-harbor
+      SITE_IDS: alder-harbor,cedar-inlet
     ports:
       - "8000:8000"
     depends_on:

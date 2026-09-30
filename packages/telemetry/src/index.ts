@@ -20,6 +20,11 @@ export function gauge(name: string, value: number): void {
   gauges.set(name, value);
 }
 
+export function observe(name: string, value: number): void {
+  inc(`${name}_count`);
+  inc(`${name}_sum`, value);
+}
+
 export function snapshotMetrics(): Record<string, number> {
   return {
     ...Object.fromEntries(counters),

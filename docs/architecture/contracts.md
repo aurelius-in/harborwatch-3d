@@ -109,7 +109,7 @@ interface SiteConfiguration {
   name: string;
   extent: { xmin: number; ymin: number; xmax: number; ymax: number };
   default_camera?: { longitude: number; latitude: number; height: number };
-  restricted_zones: GeoJsonPolygon[];
+  restricted_zones: Array<{ zone_id: string; name: string; polygon: GeoJsonPolygon }>;
 }
 ```
 

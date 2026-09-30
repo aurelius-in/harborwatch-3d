@@ -45,3 +45,17 @@ describe("SiteBoard", () => {
     expect(board.isStale(record!)).toBe(true);
   });
 });
+
+describe("HarborBoards", () => {
+  it("keeps site boards isolated", async () => {
+    const { HarborBoards } = await import("./board.ts");
+    const boards = new HarborBoards({ staleMs: 15_000, expireMs: 45_000 }, [
+      "alder-harbor",
+      "cedar-inlet",
+    ]);
+    boards.apply("alder-harbor", track("AH-1"), 1);
+    boards.apply("cedar-inlet", track("CI-1"), 1);
+    expect(boards.snapshot("alder-harbor").map((t) => t.track_id)).toEqual(["AH-1"]);
+    expect(boards.size()).toBe(2);
+  });
+});

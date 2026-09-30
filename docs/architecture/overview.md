@@ -27,8 +27,8 @@ That sentence is the product. A reviewer should be able to run the stack, see mo
 
 The desktop console is a polished operations dashboard:
 
-- A large 3D ArcGIS map occupies most of the screen.
-- 20 to 100 simulated objects move around a harbor.
+- A large 3D board occupies most of the screen (WebGL harbor by default, ArcGIS SceneView when a key is set).
+- 20 to 100 simulated objects move around Alder Harbor, plus a second site (Cedar Inlet).
 - Classifications are `vessel`, `vehicle`, `person`, or `unknown`.
 - Trails show where an object has been.
 - Clicking a track opens track ID, classification, speed, heading, confidence, last update, and the observing sensor.

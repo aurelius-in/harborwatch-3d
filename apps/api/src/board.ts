@@ -11,17 +11,18 @@ export interface BoardOptions {
   expireMs: number;
 }
 
+export interface ExpiredTrack {
+  site_id: string;
+  track_id: string;
+}
+
 export class SiteBoard {
   readonly tracks = new Map<string, TrackRecord>();
   private nextSeq = 1;
 
   constructor(private readonly options: BoardOptions) {}
 
-  apply(
-    siteId: string,
-    update: TrackUpdate,
-    incomingSeq?: number,
-  ): TrackRecord | null {
+  apply(siteId: string, update: TrackUpdate, incomingSeq?: number): TrackRecord | null {
     const prev = this.tracks.get(update.track_id);
     const seq = incomingSeq ?? this.nextSeq++;
     if (incomingSeq === undefined) {
@@ -70,5 +71,64 @@ export class SiteBoard {
 
   size(): number {
     return this.tracks.size;
+  }
+}
+
+export class HarborBoards {
+  private readonly boards = new Map<string, SiteBoard>();
+
+  constructor(
+    private readonly options: BoardOptions,
+    siteIds: string[],
+  ) {
+    for (const siteId of siteIds) {
+      this.boards.set(siteId, new SiteBoard(options));
+    }
+  }
+
+  apply(siteId: string, update: TrackUpdate, incomingSeq?: number): TrackRecord | null {
+    const board = this.boards.get(siteId);
+    if (!board) return null;
+    return board.apply(siteId, update, incomingSeq);
+  }
+
+  expire(now = Date.now()): ExpiredTrack[] {
+    const removed: ExpiredTrack[] = [];
+    for (const [siteId, board] of this.boards) {
+      for (const trackId of board.expire(now)) {
+        removed.push({ site_id: siteId, track_id: trackId });
+      }
+    }
+    return removed;
+  }
+
+  isStale(track: TrackRecord, now = Date.now()): boolean {
+    const board = this.boards.get(track.site_id);
+    return board ? board.isStale(track, now) : true;
+  }
+
+  snapshot(siteId?: string): TrackRecord[] {
+    if (siteId) return this.boards.get(siteId)?.snapshot() ?? [];
+    return [...this.boards.values()].flatMap((board) => board.snapshot());
+  }
+
+  get(trackId: string, siteId?: string): TrackRecord | undefined {
+    if (siteId) return this.boards.get(siteId)?.get(trackId);
+    for (const board of this.boards.values()) {
+      const hit = board.get(trackId);
+      if (hit) return hit;
+    }
+    return undefined;
+  }
+
+  size(siteId?: string): number {
+    if (siteId) return this.boards.get(siteId)?.size() ?? 0;
+    let total = 0;
+    for (const board of this.boards.values()) total += board.size();
+    return total;
+  }
+
+  siteIds(): string[] {
+    return [...this.boards.keys()];
   }
 }

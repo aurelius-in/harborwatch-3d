@@ -1,9 +1,9 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import type { DeviceStatus } from "@harborwatch/contracts";
+import type { DeviceStatus, RestrictedZone } from "@harborwatch/contracts";
 import type { LayerState } from "../lib/store";
 import type { SensorRecord, TrackRecord } from "../lib/api";
-import { headingToYRotation, toLocal } from "../lib/geo";
+import { headingToYRotation, lerpRadians, ORIGIN, toLocal, type GeoOrigin } from "../lib/geo";
 
 const NAVY = 0x002c54;
 const SEA = 0x006098;
@@ -20,6 +20,8 @@ const TYPE_COLOR: Record<string, number> = {
 
 export interface HarborWorldOptions {
   onSelect: (trackId: string | null) => void;
+  origin?: GeoOrigin;
+  zones?: RestrictedZone[];
 }
 
 export class HarborWorld {
@@ -49,11 +51,13 @@ export class HarborWorld {
   private windDir = 210;
   private windArrow: THREE.Object3D;
   private haze: THREE.Mesh;
+  private readonly origin: GeoOrigin;
 
   constructor(
     private readonly host: HTMLElement,
     private readonly options: HarborWorldOptions,
   ) {
+    this.origin = options.origin ?? ORIGIN;
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(DEEP);
     this.scene.fog = new THREE.FogExp2(DEEP, 0.0016);
@@ -94,7 +98,7 @@ export class HarborWorld {
     this.scene.add(this.beam.target);
     this.scene.add(this.buildCranes());
     this.scene.add(this.buildPiers());
-    this.buildZones();
+    this.buildZones(options.zones ?? []);
     this.scene.add(this.zoneGroup);
     this.scene.add(this.trackGroup);
     this.scene.add(this.trailGroup);
@@ -149,7 +153,7 @@ export class HarborWorld {
         this.trailLines.set(track.track_id, line);
         this.trailGroup.add(line);
       }
-      const { x, z } = toLocal(track.latitude, track.longitude);
+      const { x, z } = toLocal(track.latitude, track.longitude, this.origin);
       mesh.setPose(x, track.altitude, z, headingToYRotation(track.heading), track.stale === true);
       mesh.setSelected(track.track_id === this.selectedId);
       pushTrail(this.trailLines.get(track.track_id)!, x, track.altitude + 0.6, z);
@@ -173,7 +177,7 @@ export class HarborWorld {
         this.sensors.set(sensor.sensor_id, node);
         this.sensorGroup.add(node);
       }
-      const { x, z } = toLocal(sensor.latitude, sensor.longitude);
+      const { x, z } = toLocal(sensor.latitude, sensor.longitude, this.origin);
       node.position.set(x, 0, z);
       const light = node.getObjectByName("status") as THREE.Mesh;
       const status = sensor.telemetry?.status ?? "operational";
@@ -191,7 +195,7 @@ export class HarborWorld {
         this.devices.set(device.device_id, node);
         this.deviceGroup.add(node);
       }
-      const { x, z } = toLocal(device.latitude, device.longitude);
+      const { x, z } = toLocal(device.latitude, device.longitude, this.origin);
       node.position.set(x, 1.2, z);
       node.visible = device.connected;
     }
@@ -209,7 +213,9 @@ export class HarborWorld {
 
   private loop = (): void => {
     if (this.disposed) return;
-    const t = this.clock.getElapsedTime();
+    const dt = this.clock.getDelta();
+    const t = this.clock.elapsedTime;
+    for (const mesh of this.tracks.values()) mesh.tick(dt);
     const waterMat = this.water.material as THREE.ShaderMaterial;
     waterMat.uniforms.uTime.value = t;
     this.beam.target.position.set(Math.cos(t * 0.35) * 160, 0, Math.sin(t * 0.35) * 160);
@@ -356,7 +362,7 @@ export class HarborWorld {
     return group;
   }
 
-  private buildZones(): void {
+  private buildZones(zones: RestrictedZone[]): void {
     const mat = new THREE.MeshStandardMaterial({
       color: TEAL,
       transparent: true,
@@ -364,14 +370,21 @@ export class HarborWorld {
       emissive: TEAL,
       emissiveIntensity: 0.2,
     });
-    const zones = [
-      { lat: 47.63, lon: -122.4113, w: 38, d: 28 },
-      { lat: 47.6246, lon: -122.4067, w: 32, d: 24 },
-    ];
     for (const zone of zones) {
-      const { x, z } = toLocal(zone.lat, zone.lon);
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(zone.w, 0.4, zone.d), mat);
-      mesh.position.set(x, 0.4, z);
+      const ring = zone.polygon.coordinates[0] ?? [];
+      const pts = ring.map(([lon, lat]) => toLocal(lat, lon, this.origin));
+      if (pts.length < 3) continue;
+      const xs = pts.map((p) => p.x);
+      const zs = pts.map((p) => p.z);
+      const minX = Math.min(...xs);
+      const maxX = Math.max(...xs);
+      const minZ = Math.min(...zs);
+      const maxZ = Math.max(...zs);
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(Math.max(8, maxX - minX), 0.4, Math.max(8, maxZ - minZ)),
+        mat,
+      );
+      mesh.position.set((minX + maxX) / 2, 0.4, (minZ + maxZ) / 2);
       this.zoneGroup.add(mesh);
     }
   }
@@ -434,6 +447,11 @@ class TrackMesh {
   readonly group = new THREE.Group();
   private readonly body: THREE.Mesh;
   private readonly ring: THREE.Mesh;
+  private readonly current = new THREE.Vector3();
+  private readonly target = new THREE.Vector3();
+  private currentRot = 0;
+  private targetRot = 0;
+  private hasPose = false;
 
   constructor(type: string, trackId: string) {
     const color = TYPE_COLOR[type] ?? TEAL;
@@ -467,10 +485,29 @@ class TrackMesh {
   }
 
   setPose(x: number, y: number, z: number, rotY: number, stale: boolean): void {
-    this.group.position.set(x, Math.max(y, 0.6), z);
-    this.group.rotation.y = rotY;
+    this.target.set(x, Math.max(y, 0.6), z);
+    this.targetRot = rotY;
     (this.body.material as THREE.MeshStandardMaterial).opacity = stale ? 0.45 : 1;
     (this.body.material as THREE.MeshStandardMaterial).transparent = stale;
+    if (!this.hasPose) {
+      this.current.copy(this.target);
+      this.currentRot = rotY;
+      this.hasPose = true;
+      this.applyPose();
+    }
+  }
+
+  tick(dt: number): void {
+    if (!this.hasPose) return;
+    const k = 1 - Math.exp(-dt * 7);
+    this.current.lerp(this.target, k);
+    this.currentRot = lerpRadians(this.currentRot, this.targetRot, k);
+    this.applyPose();
+  }
+
+  private applyPose(): void {
+    this.group.position.copy(this.current);
+    this.group.rotation.y = this.currentRot;
   }
 
   setSelected(selected: boolean): void {

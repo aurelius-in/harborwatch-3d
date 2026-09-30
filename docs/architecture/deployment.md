@@ -62,7 +62,7 @@ The web build reads `VITE_ARCGIS_API_KEY` when present. Without it, the 3D harbo
 |---|---|---|
 | `ARCGIS_API_KEY` | web | Maps SDK |
 | `DATABASE_URL` | api | PostgreSQL |
-| `AUTH_ISSUER` | api | OIDC |
+| `AUTH_ISSUER` | (unused) | Placeholder for a future OIDC adapter |
 | `INGEST_KEY` | api, simulator | Service auth |
 | `STALE_MS` / `EXPIRE_MS` | api | Track lifetime |
 | `SITE_IDS` | simulator | Scenario selection |
@@ -91,7 +91,7 @@ smoke test
 production approval
 ```
 
-GitHub Actions (`.github/workflows/ci.yml`) runs typecheck, unit/contract tests, Python contract tests, and the web build on every push to `main`. Hosted deploy remains gated on a human approval.
+GitHub Actions (`.github/workflows/ci.yml`) runs typecheck, unit/contract tests, Python contract tests, the web build, and Playwright on every push to `main`. Hosted deploy remains gated on a human approval.
 
 ## Cloud shape
 

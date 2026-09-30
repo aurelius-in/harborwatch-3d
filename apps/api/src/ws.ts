@@ -15,6 +15,7 @@ export function broadcast(
   for (const client of ctx.clients) {
     if (!client.channels.has(channel)) continue;
     if (!client.session.site_ids.includes(siteId)) continue;
+    if (client.siteFilter && client.siteFilter !== siteId) continue;
     if (client.socket.readyState !== 1) continue;
     try {
       client.socket.send(text);
@@ -42,24 +43,35 @@ export function attachWebSockets(server: Server, ctx: AppContext): void {
       return;
     }
     wss.handleUpgrade(request, socket, head, (ws) => {
+      const preferredSite = session.site_ids[0] ?? null;
       const client: ClientSocket = {
         socket: ws,
         session,
         channels: new Set([channel]),
+        siteFilter: preferredSite,
       };
       ctx.clients.add(client);
       gauge("hw_ws_clients", ctx.clients.size);
       ctx.logger.info({
         event: "ws.subscribe",
         service: "api",
-        site_id: session.site_ids[0],
+        site_id: preferredSite ?? undefined,
         channel,
       });
       ws.on("message", (raw) => {
         try {
-          const msg = JSON.parse(String(raw)) as { subscribe?: string[] };
+          const msg = JSON.parse(String(raw)) as {
+            subscribe?: string[];
+            site_id?: string;
+          };
           if (Array.isArray(msg.subscribe)) {
             for (const name of msg.subscribe) client.channels.add(name);
+          }
+          if (typeof msg.site_id === "string" && client.session.site_ids.includes(msg.site_id)) {
+            client.siteFilter = msg.site_id;
+            if (client.channels.has("tracks")) {
+              sendTrackSnapshot(ctx, client, msg.site_id);
+            }
           }
         } catch {
           /* ignore malformed client frames */
@@ -69,21 +81,27 @@ export function attachWebSockets(server: Server, ctx: AppContext): void {
         ctx.clients.delete(client);
         gauge("hw_ws_clients", ctx.clients.size);
       });
-      if (channel === "tracks") {
-        for (const track of ctx.board.snapshot()) {
-          const envelope: StreamEnvelope<TrackUpdate> = {
-            type: "track",
-            schema: "harborwatch.track/1",
-            site_id: track.site_id,
-            seq: track.seq,
-            sent_at: new Date().toISOString(),
-            payload: track,
-          };
-          ws.send(JSON.stringify(envelope));
-        }
+      if (channel === "tracks" && preferredSite) {
+        sendTrackSnapshot(ctx, client, preferredSite);
       }
     });
   });
+}
+
+function sendTrackSnapshot(ctx: AppContext, client: ClientSocket, siteId: string): void {
+  for (const track of ctx.board.snapshot(siteId)) {
+    const envelope: StreamEnvelope<TrackUpdate> = {
+      type: "track",
+      schema: "harborwatch.track/1",
+      site_id: track.site_id,
+      seq: track.seq,
+      sent_at: new Date().toISOString(),
+      payload: track,
+    };
+    if (client.socket.readyState === 1) {
+      client.socket.send(JSON.stringify(envelope));
+    }
+  }
 }
 
 function channelFromPath(pathname: string): string | null {

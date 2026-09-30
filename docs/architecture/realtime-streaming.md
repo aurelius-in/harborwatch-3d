@@ -13,7 +13,7 @@ Hundreds of continuously changing objects are a streaming problem, not a polling
 <td width="8" bgcolor="#00A0B8"></td>
 <td>
 
-<strong>Note.</strong> ArcGIS <code>StreamLayer</code> is built for continuously changing geographic observations, custom WebSockets, track IDs, purge rules, and client update-rate controls.
+<strong>Note.</strong> Esri StreamLayer is the GIS-team contract for a future bind. This demo uses custom WebSockets plus a track store. SceneView graphics are used when an ArcGIS key is present.
 
 </td>
 </tr>
@@ -27,7 +27,7 @@ Hundreds of continuously changing objects are a streaming problem, not a polling
 | `/ws/telemetry` | Sensor and environment | 0.2 to 1 Hz |
 | `/ws/status` | Device and connection | On change, heartbeat 10 s |
 
-Handshake carries a bearer token. The server binds the socket to `user_id`, `role`, and allowed `site_id` values. Subscribe messages may narrow object types or a viewport.
+Handshake carries a bearer token. The server binds the socket to `user_id`, `role`, and allowed `site_id` values. After open, the client may send `{ "subscribe": ["tracks"], "site_id": "alder-harbor" }` to pin the fan-out to one site.
 
 ## Sequencing
 
@@ -41,23 +41,23 @@ The client ignores an update when `seq` is less than or equal to the last applie
 
 ## Reconnection
 
-1. Client shows the reconnect badge (teal pulse on navy).
-2. Socket opens with the last received `seq` (or timestamp if seq unknown).
-3. Server may send a short snapshot of currently active tracks, then live diffs.
-4. StreamLayer reconnects with the same track IDs so graphics do not flicker as new objects.
+1. Client shows the reconnect badge (teal pulse on navy) and the backoff delay.
+2. Sockets reopen independently (`/ws/tracks`, `/ws/telemetry`, `/ws/status`) with exponential backoff, capped at 20 s.
+3. On `/ws/tracks` open, the server sends a snapshot of currently active tracks for the subscribed site, then live diffs.
+4. The client discards any `seq` less than or equal to the last applied value for that `track_id`.
 
-If snapshot is large, the server pages it. The client does not block the UI on a full replay.
+The demo does not resume from a client-supplied `since_seq`. Snapshot plus live seq filtering is the reconnect contract.
 
 ## Throttling
 
 | Control | Where | Purpose |
 |---|---|---|
-| Ingest cap | API | Drop or coalesce updates above a per-sensor rate |
-| Fan-out coalesce | Broker | Latest position wins inside a 100 ms window |
-| StreamLayer update-rate | Client | Keep the scene interactive on phone |
-| Viewport subscribe | Client to API | Send only tracks near the camera when the operator opts in |
+| Ingest cap | API | Drop updates for a track closer than 80 ms |
+| History sample | API | Write a history point at most every 2 s per track |
+| Login rate limit | API | 20 attempts per minute per IP |
+| Ingest rate limit | API | 400 envelopes per second per IP |
 
-Purge rules on StreamLayer keep the feature set bounded. HarborWatch also expires tracks server-side.
+The demo does not coalesce fan-out in a broker window and does not implement viewport subscribe. Site subscribe is implemented.
 
 ## Stale tracks
 
@@ -67,21 +67,23 @@ History remains queryable after expire. Live presence does not.
 
 ## Interpolation
 
-The client may interpolate heading and position between updates for smoothness. Interpolation is presentation only. The inspector shows the last **received** speed, heading, and timestamp, not the interpolated pose.
+The WebGL harbor interpolates heading and position between updates for smoothness. Interpolation is presentation only. The inspector shows the last **received** speed, heading, and timestamp, not the interpolated pose. ArcGIS graphics snap to the last received point.
 
 ## Why this answers "hundreds of objects"
 
 - Track IDs instead of creating new objects
 - Incremental attribute updates
 - WebSockets instead of polling
-- Server and client filters
+- Server and client site filters
 - Update throttling
 - Bounded history
 - Stale-track expiration
-- Interpolation for motion
-- Reconnection
+- Interpolation for WebGL motion
+- Reconnection with snapshot
 - Sequence numbers and timestamps
-- Subscription by site and layer
+- Subscription by site
+
+Viewport subscribe and StreamLayer purge rules are not part of this repository.
 
 ## Related
 
