@@ -37,29 +37,21 @@ The product is the integration layer: contracts, ingest, RBAC, live sockets, and
 
 ## The picture
 
+<img src="./screenshot2b.png" alt="HarborWatch 3D console on Alder Harbor: 48 live tracks, three WebSockets live, four LiDAR units operational" width="100%" />
+
+**One glance, and the harbor is already moving.** Alder Harbor is selected. The header reads LIVE, 48 tracks in motion, 48 on the board, Operator signed in. Above the glass, the strip is the site and the gateway together: visibility 7,964 m, wind 5.1 m/s from the south, 12.6 C, ingest 8.1 seconds old, health 48. The left rail is the stream contract made visible. `/ws/tracks`, `/ws/telemetry`, and `/ws/status` are all live, the last frame is now, and backoff is idle. North pier, South quay, Channel, and Gate report operational. Every layer is on, including track history, restricted zones, and device locations. The roster is already specific: TRK-0001 through TRK-0004 are vessels between 3 and 8 m/s. The lighthouse and quay are the site model. The cyan marks are normalized tracks.
+
 <table>
 <tr>
 <td width="50%" valign="top">
-<img src="./screenshot4.png" alt="Alder Harbor in 3D, panels collapsed, live tracks on the water" />
+<img src="./screenshot3b.png" alt="Environment gauges, device GPS, and a live alert queue for the inner basin and fuel pier" />
 <br/>
-<b>The board.</b> Lighthouse, quay, and warehouses are the site. The cyan marks are normalized tracks, not a point cloud.
+<b>Same session, a few seconds later.</b> Visibility has fallen to 6,634 m. Wind has shifted. Sea state is 1.6. Ingest is 0.3 seconds. Device GPS lists the gateway, the radio, and each LiDAR unit, with coordinates, all up. The queue is doing two jobs: low-confidence unknown contacts, and restricted-zone entries at the inner basin and the fuel pier. Acknowledge is on the glass because this session is an Operator.
 </td>
 <td width="50%" valign="top">
-<img src="./screenshot2.png" alt="Operations console with sensor health, weather, layers, and the live roster" />
+<img src="./screenshot1b.png" alt="Split sign-in: HarborWatch mark and two sites beside Viewer, Operator, and Admin" />
 <br/>
-<b>The working set.</b> Four LiDAR units, live weather, layer toggles, and the track roster on one clock.
-</td>
-</tr>
-<tr>
-<td width="50%" valign="top">
-<img src="./screenshot3.png" alt="Alert queue for restricted-zone crossings and low-confidence contacts" />
-<br/>
-<b>The queue.</b> Inner-basin crossings and low-confidence unknowns. Acknowledge is an Operator action. The API refuses a Viewer.
-</td>
-<td width="50%" valign="top">
-<img src="./screenshot1.png" alt="HarborWatch 3D sign-in with Viewer, Operator, and Admin" />
-<br/>
-<b>The gate.</b> Viewer, Operator, and Admin are roles the API enforces. Hosted identity swaps in as OIDC. This demo uses a local adapter.
+<b>The gate, before the board.</b> The mark sits with the two sites this account can open: Alder Harbor, the primary basin, and Cedar Inlet. The other half is the session. Operator is filled in. Viewer, Operator, and Admin are one click, and the API is what enforces them. The footnote on the card is intentional: this demo signs you in locally. A hosted deployment would use OIDC.
 </td>
 </tr>
 </table>
