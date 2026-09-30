@@ -8,7 +8,9 @@
 
 ## Scene
 
-The map is an ArcGIS **SceneView**. The default camera looks at a fictional harbor extent used by the simulator. Basemap and elevation come from the ArcGIS platform. The application does not ship classified charts.
+The map is an ArcGIS **SceneView** when `VITE_ARCGIS_API_KEY` is set. Without a key, HarborWatch mounts a built-in WebGL harbor that still draws live tracks, trails, sensors, zones, and devices in the logo palette. The track store is the same either way.
+
+The default camera looks at the fictional **Alder Harbor** extent used by the simulator. The application does not ship operational charts.
 
 <table>
 <tr>
@@ -23,10 +25,12 @@ The map is an ArcGIS **SceneView**. The default camera looks at a fictional harb
 
 ## StreamLayer
 
-`StreamLayer` is the live object layer:
+`StreamLayer` is the production binding to an Esri stream service. This repository's live object layer:
 
-- Connects to the custom `/ws/tracks` WebSocket (or a small adapter that speaks the StreamLayer protocol).
-- Groups observations by `track_id`.
+- Subscribes to `/ws/tracks`.
+- Groups observations by `track_id` in the client track store.
+- On ArcGIS, upserts graphics by `track_id` (the StreamLayer adapter).
+- On the built-in harbor scene, moves meshes by the same IDs.
 - Applies purge and maximum-age rules so the browser does not accumulate thousands of old points.
 - Renders 3D symbols by `object_type`.
 

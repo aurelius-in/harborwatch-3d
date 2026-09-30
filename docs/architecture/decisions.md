@@ -84,9 +84,19 @@ Status values: **Accepted**, **Proposed**, **Superseded**.
 
 **Context.** Defense-adjacent visualization invites sloppy storytelling.
 
-**Decision.** Docs and README state that HarborWatch 3D is a **public reference implementation** with simulated tracks. No Navy, NSWC, classified, or contract-program claims.
+**Decision.** Docs and README state that HarborWatch 3D is a **public reference implementation** with simulated tracks. No government or contract-program claims.
 
 **Consequences.** Architecture can be discussed in the open. Fiction about hardware or clearance is out of bounds.
+
+## ADR-009. SceneView when keyed, 3D harbor otherwise
+
+**Status:** Accepted
+
+**Context.** ArcGIS SceneView is the GIS contract. A missing developer key must not produce an empty operations board.
+
+**Decision.** If `VITE_ARCGIS_API_KEY` is set, the console loads SceneView and upserts graphics by `track_id`. If it is missing or the SDK fails to load, the console mounts a WebGL harbor scene fed by the same track store.
+
+**Consequences.** Reviewers can judge motion, RBAC, and layout without a GIS license. GIS specialists can still bind StreamLayer to the same `/ws/tracks` contract.
 
 ## Related
 

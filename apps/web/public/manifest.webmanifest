@@ -1,0 +1,17 @@
+{
+  "name": "HarborWatch 3D",
+  "short_name": "HarborWatch",
+  "description": "Real-time sensor fusion operations console",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#001428",
+  "theme_color": "#002C54",
+  "icons": [
+    {
+      "src": "/hw3d-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

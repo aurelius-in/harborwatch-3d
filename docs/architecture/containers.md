@@ -55,12 +55,12 @@ flowchart TB
 |---|---|
 | Runtime | Browser (PWA) |
 | Stack | React, TypeScript, Vite |
-| GIS | ArcGIS Maps SDK: `SceneView`, `StreamLayer` |
-| Talks to | REST on `apps/api`, WebSockets, ArcGIS |
+| GIS | ArcGIS Maps SDK `SceneView` when an API key is set; built-in 3D harbor scene otherwise |
+| Talks to | REST on `apps/api`, WebSockets, optional ArcGIS |
 
 Responsibilities: layout (desktop sidebar, tablet drawer, phone sheet), layer toggles, track inspector, reconnect banner, RBAC-aware chrome, offline-capable shell.
 
-Local port (planned): `http://localhost:3000`.
+Local port: `http://localhost:3000`.
 
 ## `apps/api`
 
@@ -72,17 +72,23 @@ Local port (planned): `http://localhost:3000`.
 
 Responsibilities: authentication, RBAC, site-scoped subscriptions, normalized contracts, historical queries, WebSocket lifecycle, structured logs, `/api/health`.
 
-REST surface (planned):
+REST surface:
 
 | Method | Path | Purpose |
 |---|---|---|
+| POST | `/api/auth/login` | Local identity adapter |
 | GET | `/api/sites` | Sites the user may see |
 | GET | `/api/sensors` | Sensor roster and health snapshot |
-| GET | `/api/tracks/:id/history` | Bounded historical points |
+| GET | `/api/devices` | Device GPS and heartbeat |
+| GET | `/api/tracks` | Snapshot of the live board |
+| GET | `/api/tracks/:id/history` | Bounded historical points (operator+) |
+| GET | `/api/alerts` | In-app alerts |
+| POST | `/api/alerts/:id/ack` | Acknowledge (operator+) |
 | GET | `/api/user` | Current session and role |
 | GET | `/api/health` | Liveness and dependency flags |
+| POST | `/api/ingest` | Simulator or edge service ingest |
 
-WebSocket surface (planned):
+WebSocket surface:
 
 | Path | Payload |
 |---|---|
@@ -90,7 +96,7 @@ WebSocket surface (planned):
 | `/ws/telemetry` | Sensor and environmental telemetry |
 | `/ws/status` | Connection, device, and alert status |
 
-Local port (planned): `http://localhost:5000`.
+Local port: `http://localhost:5000`.
 
 ## `services/edge-simulator`
 
@@ -113,7 +119,7 @@ It pretends to be the edge and streaming team's process. It emits object tracks,
 </tr>
 </table>
 
-Local port (planned): `http://localhost:8000`.
+Local port: `http://localhost:8000`.
 
 ## PostgreSQL
 

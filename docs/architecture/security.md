@@ -12,12 +12,12 @@ HarborWatch 3D is account-based. The public demo may ship a local identity adapt
 
 | Environment | Adapter |
 |---|---|
-| Local | Dev users in `.env` or a seed script (`packages/auth`) |
+| Local | Seeded demo users (`viewer@harborwatch.local`, `operator@harborwatch.local`, `admin@harborwatch.local`) via `packages/auth` |
 | Staging / production | OIDC code flow, JWT access tokens on REST and WebSocket |
 
-`GET /api/user` returns `UserSession`. The SPA stores tokens in memory (and an httpOnly refresh cookie when the API is same-site). Tokens are not written to `localStorage` in the target design.
+`GET /api/user` returns `UserSession`. The local demo stores the JWT in `sessionStorage` so a refresh keeps the operator on the board. The hosted target is memory plus an httpOnly refresh cookie. Do not put access tokens in `localStorage`.
 
-WebSocket handshake sends `Authorization: Bearer`. Connections without a valid session close with 4401.
+WebSocket handshake accepts `Authorization: Bearer` or `?token=` (browsers cannot set WS headers). Connections without a valid session are rejected.
 
 ## RBAC
 
@@ -58,7 +58,7 @@ Admin and Operator writes emit structured audit events: actor, action, site, tar
 <td width="8" bgcolor="#002C54"></td>
 <td>
 
-<strong>Boundary.</strong> This is not a classified system. Do not put real harbor coordinates that are sensitive, real badge lists, or operational sensor IDs in the public simulator. Use fictional sites.
+<strong>Boundary.</strong> Public demo with a fictional site. Do not put sensitive coordinates, real badge lists, or operational sensor IDs in the simulator.
 
 </td>
 </tr>

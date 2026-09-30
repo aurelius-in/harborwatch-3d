@@ -1,0 +1,28 @@
+{
+  "name": "harborwatch-3d",
+  "private": true,
+  "version": "1.0.0",
+  "description": "HarborWatch 3D: real-time sensor-fusion operations console",
+  "workspaces": [
+    "apps/web",
+    "apps/api",
+    "packages/contracts",
+    "packages/auth",
+    "packages/telemetry"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c cyan,teal \"npm run dev -w @harborwatch/api\" \"npm run dev -w @harborwatch/web\"",
+    "dev:sim": "python services/edge-simulator/main.py",
+    "build": "npm run build -w @harborwatch/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run typecheck",
+    "test": "npm run test -w @harborwatch/contracts && npm run test -w @harborwatch/api && npm run test -w @harborwatch/web && python -m pytest services/edge-simulator -q",
+    "test:unit": "npm run test -w @harborwatch/contracts && npm run test -w @harborwatch/api && npm run test -w @harborwatch/web"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

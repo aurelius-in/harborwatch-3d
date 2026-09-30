@@ -1,0 +1,18 @@
+{
+  "type": "sensor_telemetry",
+  "schema": "harborwatch.sensor_telemetry/1",
+  "site_id": "alder-harbor",
+  "sent_at": "2026-09-30T04:00:00.000Z",
+  "payload": {
+    "sensor_id": "LIDAR-03",
+    "site_id": "alder-harbor",
+    "status": "operational",
+    "temperature_c": 11.4,
+    "humidity_percent": 78,
+    "visibility_meters": 8200,
+    "wind_speed_mps": 4.1,
+    "wind_direction": 210,
+    "battery_percent": 96,
+    "timestamp": "2026-09-30T04:00:00.000Z"
+  }
+}

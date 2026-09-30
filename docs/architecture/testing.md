@@ -6,46 +6,65 @@
 
 > Unit, integration, contract, E2E, and load.
 
+## Run
+
+```bash
+npm test
+npm run typecheck
+npm run build
+```
+
+`npm test` runs:
+
+1. Golden `TrackUpdate` fixtures in `packages/contracts`
+2. API board, RBAC, login, and ingest tests (`apps/api`)
+3. `RoleGate` UI tests (`apps/web`)
+4. The same fixture parsed in Python (`services/edge-simulator`)
+
+CI is `.github/workflows/ci.yml`.
+
 ## Layers
 
 | Layer | Where | Proves |
 |---|---|---|
-| Unit | `apps/*`, `packages/*`, `services/edge-simulator` | Pure functions: RBAC, stale expiry, seq discard |
-| Contract | `packages/contracts`, `tests/integration` | Fixture JSON parses on Node and Python |
-| Integration | `tests/integration` | Ingest to socket to in-memory board |
-| E2E | `tests/e2e` | Login, see tracks, open inspector, toggle layer |
+| Unit | `apps/api/src/*.test.ts`, `apps/web` | RBAC, stale expiry, seq discard, RoleGate |
+| Contract | `packages/contracts`, `services/edge-simulator` | Fixture JSON parses on Node and Python |
+| Integration | `apps/api` HTTP tests | Login, ingest key, live board |
+| E2E | Manual / future Playwright | Login, see tracks, open inspector, toggle layer |
 | Load | Optional k6 or locust | Fan-out under 200 clients / 200 tracks |
 
 ## Contract tests
 
-Golden files live next to the schemas. A change that renames `speed_mps` fails both the TypeScript compile and the Python validator. That is the point of `packages/contracts`.
+Golden files live in `packages/contracts/fixtures`. A change that renames `speed_mps` fails both the TypeScript parser and the Python validator. That is the point of `packages/contracts`.
 
 ## Integration
 
-Docker Compose test profile starts API, simulator, and Postgres. A test client:
+The API test harness boots Express against the in-memory store:
 
-1. Authenticates as Operator.
-2. Subscribes to `/ws/tracks`.
-3. Waits for a `TrackUpdate` with a known `track_id` prefix.
-4. Calls `GET /api/tracks/:id/history` after a short sample window.
+1. `POST /api/auth/login` as Viewer and Operator.
+2. Viewer is rejected from `POST /api/alerts/:id/ack`.
+3. Ingest without `X-Ingest-Key` returns 401.
+4. Ingest with the key upserts `TRK-0099` on the site board.
 
-## E2E
+Docker Compose is the full path: API, simulator, Postgres, and the web console.
 
-Playwright (planned) drives the Vite preview:
+## Console checks
 
-- Desktop: sidebar visible, click track, inspector shows heading and sensor.
-- Phone viewport: bottom sheet, large toggles.
-- Reconnect: stop API briefly, badge appears, tracks resume.
+With the stack up:
 
-GIS tokens in CI use a restricted key or a mocked SceneView when ArcGIS cannot run.
+- Desktop: sidebar visible, click a track, inspector shows heading and sensor.
+- Phone viewport: ops panels become a drawer or sheet, toggles stay large.
+- Reconnect: stop the API briefly, the badge switches to reconnect, tracks resume.
+
+GIS tokens in CI are optional. The built-in 3D harbor scene is the default so CI does not need ArcGIS.
 
 ## Load
 
-A load script publishes synthetic `TrackUpdate` events through ingest (not through the public web). Success is defined as p95 socket latency and a board size that matches active IDs after expire.
+A load script should publish synthetic `TrackUpdate` events through ingest (not through the public web). Success is p95 socket latency and a board size that matches active IDs after expire.
 
 ## What we do not test here
 
-Raw LiDAR algorithms, classified data handling, and vendor-specific StreamLayer bugs in ArcGIS itself. We test our adapters and contracts.
+Raw LiDAR algorithms and vendor-specific ArcGIS StreamLayer bugs. We test adapters and contracts.
 
 ## Related
 

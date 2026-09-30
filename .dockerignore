@@ -1,0 +1,10 @@
+node_modules
+.git
+*.mp4
+hw3d-loop.gif
+HarborWatch-ani-loop-Thumbnail.jpg
+**/dist
+.venv
+__pycache__
+.pytest_cache
+.env

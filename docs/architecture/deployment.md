@@ -34,7 +34,27 @@ Expected endpoints:
 | API | http://localhost:5000 |
 | Edge simulator | http://localhost:8000 |
 
-Compose starts `apps/web`, `apps/api`, `services/edge-simulator`, and PostgreSQL. The web build reads the ArcGIS key from the env file.
+Compose starts `apps/web`, `apps/api`, `services/edge-simulator`, and PostgreSQL.
+
+### Demo logins
+
+| Role | Email | Password |
+|---|---|---|
+| Viewer | viewer@harborwatch.local | viewer |
+| Operator | operator@harborwatch.local | operator |
+| Admin | admin@harborwatch.local | admin |
+
+### Without Docker
+
+```bash
+npm install
+pip install -r services/edge-simulator/requirements.txt
+npm run dev
+```
+
+Second terminal: `npm run dev:sim`. The API uses in-memory storage when `DATABASE_URL` is unset or starts with `memory://`.
+
+The web build reads `VITE_ARCGIS_API_KEY` when present. Without it, the 3D harbor fallback still shows live tracks.
 
 ## Configuration
 
@@ -71,7 +91,7 @@ smoke test
 production approval
 ```
 
-GitHub Actions under `.github/workflows/` is the intended home. Production deploy is gated on a human approval, not a push to `main` alone.
+GitHub Actions (`.github/workflows/ci.yml`) runs typecheck, unit/contract tests, Python contract tests, and the web build on every push to `main`. Hosted deploy remains gated on a human approval.
 
 ## Cloud shape
 

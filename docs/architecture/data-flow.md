@@ -56,7 +56,7 @@ sequenceDiagram
 | Simulator | Emits one or more `site_id` scenarios |
 | API | User may only subscribe to permitted sites |
 | Socket | Optional object-type and bounding-box filters |
-| Client | Layer toggles hide renderers, they do not unscribe unless asked |
+| Client | Layer toggles hide renderers; they do not unsubscribe unless asked |
 
 ## History path
 

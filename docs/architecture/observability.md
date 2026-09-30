@@ -55,7 +55,7 @@ The web app can expose a debug overlay for Admin: last socket timestamp, board s
 
 `status` is `degraded` when ingest is stale or the database is down but the process still serves a last-known board. `status` is `error` when the process should be taken out of rotation.
 
-The simulator exposes a simple liveness route on its planned port.
+The simulator exposes `GET /health` on port 8000.
 
 ## Tracing
 

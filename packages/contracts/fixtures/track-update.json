@@ -1,0 +1,20 @@
+{
+  "type": "track",
+  "schema": "harborwatch.track/1",
+  "site_id": "alder-harbor",
+  "seq": 42,
+  "sent_at": "2026-09-30T04:00:00.000Z",
+  "payload": {
+    "track_id": "TRK-0027",
+    "object_type": "vessel",
+    "latitude": 47.6271,
+    "longitude": -122.4088,
+    "altitude": 0.4,
+    "speed_mps": 4.2,
+    "heading": 128.5,
+    "confidence": 0.91,
+    "sensor_id": "LIDAR-03",
+    "timestamp": "2026-09-30T04:00:00.000Z",
+    "last_seen": "2026-09-30T04:00:00.000Z"
+  }
+}

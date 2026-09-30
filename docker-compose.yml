@@ -1,0 +1,61 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: harborwatch
+      POSTGRES_PASSWORD: harborwatch
+      POSTGRES_DB: harborwatch
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U harborwatch"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      PORT: "5000"
+      DATABASE_URL: postgres://harborwatch:harborwatch@postgres:5432/harborwatch
+      JWT_SECRET: harborwatch-dev-jwt-change-me
+      INGEST_KEY: harborwatch-ingest-dev
+      STALE_MS: "15000"
+      EXPIRE_MS: "45000"
+      LOG_LEVEL: info
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+  simulator:
+    build:
+      context: ./services/edge-simulator
+    environment:
+      API_URL: http://api:5000
+      INGEST_KEY: harborwatch-ingest-dev
+      TRACK_COUNT: "48"
+      SIMULATOR_PORT: "8000"
+      SITE_ID: alder-harbor
+    ports:
+      - "8000:8000"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:

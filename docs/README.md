@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="../hw3d-logo.png" alt="HarborWatch 3D" width="280" />
+  <img src="../hw3d-logo-loop.gif" alt="HarborWatch 3D" width="280" />
 </p>
 
 <h1 align="center">HarborWatch 3D documentation</h1>
 
 <p align="center">
-  <strong>Real-Time Sensor Fusion &amp; Geospatial Operations Platform</strong>
+  <strong>Contracts, streaming, and a 3D operations board</strong>
 </p>
 
 <p align="center">
@@ -24,7 +24,7 @@ The project models **LiDAR-derived object tracks**, not raw LiDAR, SLAM, or poin
 <td width="8" bgcolor="#00A0B8"></td>
 <td>
 
-**Scope.** This is a public architecture and integration reference. It does not claim Navy, NSWC, classified, or proprietary program work.
+**Scope.** Public architecture and integration reference. Simulated tracks only. It does not represent government, defense, or proprietary program work.
 
 </td>
 </tr>
@@ -32,7 +32,7 @@ The project models **LiDAR-derived object tracks**, not raw LiDAR, SLAM, or poin
 
 ## Palette
 
-Colors are taken from [`hw3d-logo.png`](../hw3d-logo.png). There is no gold in the mark. Use these tokens in diagrams, badges, and callouts.
+Colors are taken from [`hw3d-logo.png`](../hw3d-logo.png). The README and this index use [`hw3d-logo-loop.gif`](../hw3d-logo-loop.gif). There is no gold in the mark. Use these tokens in diagrams, badges, and callouts.
 
 | Token | Hex | Role |
 |---|---|---|
@@ -86,9 +86,9 @@ Callout convention used across this set:
 
 ## Start here
 
-1. Read [architecture overview](./architecture/overview.md) for the product story.
-2. Open [system overview diagrams](./diagrams/system-overview.md) for the picture a reviewer should see first.
-3. Read [contracts](./architecture/contracts.md) before changing APIs or simulator payloads.
-4. Use [deployment](./architecture/deployment.md) to run the stack.
+1. Run the stack: `docker compose up --build` (see [deployment](./architecture/deployment.md)).
+2. Read [architecture overview](./architecture/overview.md) for the product story.
+3. Open [system overview diagrams](./diagrams/system-overview.md) for the picture a reviewer should see first.
+4. Read [contracts](./architecture/contracts.md) before changing APIs or simulator payloads.
 
 Root product page: [README.md](../README.md).

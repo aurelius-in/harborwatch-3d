@@ -21,7 +21,7 @@
 
 Sensors around a harbor detect moving objects. The application shows those objects moving live on a 3D map, along with sensor health, weather conditions, alerts, and historical tracks.
 
-That sentence is the product. A reviewer should be able to run the stack, see moving tracks on a SceneView, click one, watch telemetry change, toggle layers, and shrink the viewport to a phone layout.
+That sentence is the product. A reviewer should be able to run the stack, see moving tracks on the 3D board, click one, watch telemetry change, toggle layers, and shrink the viewport to a phone layout. If an ArcGIS API key is present, the board is a SceneView. If it is missing, the built-in 3D harbor scene still shows live tracks. The demo never renders an empty map.
 
 ## What the screen looks like
 
@@ -67,7 +67,7 @@ API / Streaming Gateway
 React Dashboard
 ```
 
-The **Python edge simulator** stands in for the component an application lead would receive from an edge or streaming engineer. The **Node.js API** authenticates, authorizes, fans out, stores history, and logs. The **React** client binds StreamLayer to those sockets.
+The **Python edge simulator** stands in for the component an application lead would receive from an edge or streaming engineer. The **Node.js API** authenticates, authorizes, fans out, stores history, and logs. The **React** client binds a track store to ArcGIS SceneView when a key is configured, and to the built-in 3D harbor scene otherwise.
 
 ## Principles
 
@@ -79,11 +79,11 @@ The **Python edge simulator** stands in for the component an application lead wo
 | Streams, not polls | Live motion and telemetry move over WebSockets |
 | Bounded memory | Purge, throttle, and expire stale tracks |
 | Adaptive chrome | One application model, three presentations |
-| Public and defensible | Simulated data, no classified or program claims |
+| Public and defensible | Simulated data, no government or program claims |
 
 ## Repository map
 
-The intended tree (see the [root README](../../README.md)):
+The intended tree is now the running tree. See the [root README](../../README.md):
 
 ```text
 harborwatch-3d/
@@ -105,7 +105,7 @@ harborwatch-3d/
 <td width="8" bgcolor="#002C54"></td>
 <td>
 
-<strong>Boundary.</strong> This repository does not implement point-cloud ingest, SLAM, multi-sensor association algorithms, classified data handling, or a claim that the work ran on a Navy or NSWC program.
+<strong>Boundary.</strong> This repository does not implement point-cloud ingest, SLAM, or multi-sensor association. It does not represent government or proprietary program work.
 
 </td>
 </tr>

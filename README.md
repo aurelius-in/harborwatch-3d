@@ -1,217 +1,161 @@
 <p align="center">
-  <img src="./hw3d-logo.png" alt="HarborWatch 3D" width="320" />
+  <img src="./hw3d-logo-loop.gif" alt="HarborWatch 3D" width="320" />
 </p>
 
 <h1 align="center">HarborWatch 3D</h1>
 
 <p align="center">
-  <strong>Real-Time Sensor Fusion &amp; Geospatial Operations Platform</strong>
+  <strong>Real-time sensor fusion for a harbor operations console</strong>
 </p>
 
 <p align="center">
   <img alt="navy" src="https://img.shields.io/badge/navy-%23002C54.svg?style=flat-square&labelColor=002C54&color=002C54" />
   <img alt="sea" src="https://img.shields.io/badge/sea-%23006098.svg?style=flat-square&labelColor=006098&color=006098" />
   <img alt="teal" src="https://img.shields.io/badge/teal-%2300A0B8.svg?style=flat-square&labelColor=00A0B8&color=00A0B8" />
+  <img alt="beam" src="https://img.shields.io/badge/beam-%23ACE0E8.svg?style=flat-square&labelColor=ACE0E8&color=ACE0E8" />
 </p>
 
-HarborWatch 3D is a reference implementation of a secure, account-based application for visualizing real-time sensor-derived object tracks in a 3D geospatial environment.
+<p align="center">
+  <a href="https://github.com/aurelius-in/harborwatch-3d/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/aurelius-in/harborwatch-3d/actions/workflows/ci.yml/badge.svg" /></a>
+  <img alt="license" src="https://img.shields.io/badge/license-MIT-002C54?style=flat-square" />
+</p>
 
-## Overview
+HarborWatch 3D is a public reference implementation of a **secure, account-based operations console**. Edge sensors emit normalized object tracks. A streaming gateway authenticates operators, fans those tracks out over WebSockets, and a React console draws them in 3D with sensor health, weather, alerts, and history.
 
-The system models a distributed sensor deployment in which edge devices produce LiDAR-derived object tracks, device status, and environmental telemetry. A streaming application layer normalizes that information and distributes updates to authenticated browser clients using WebSockets.
+The product is the integration layer: contracts, ingest, RBAC, live sockets, and the board. Detection, SLAM, and point-cloud processing stay with the edge team. GIS internals stay with the GIS team.
 
-Users can monitor moving objects, inspect individual tracks, view sensor and environmental telemetry, toggle visualization layers, monitor device health, and interact with the system from desktop, tablet, or mobile devices.
+<table>
+<tr>
+<td width="8" bgcolor="#00A0B8"></td>
+<td>
 
-**The project emphasizes the application and systems-integration layer rather than LiDAR signal processing itself.**
+<strong>Scope.</strong> Simulated LiDAR-derived tracks on a fictional site (Alder Harbor). This repository does not represent a government, defense, or proprietary program.
 
-## Features
+</td>
+</tr>
+</table>
 
-- Real-time 3D geospatial visualization with ArcGIS SceneView
-- WebSocket-based continuous track updates with track IDs
-- Multi-site sensor deployment monitoring
-- Sensor health, environmental telemetry, alerts, and device status
-- Viewer, Operator, and Admin roles
-- Responsive desktop, tablet, and mobile layouts
-- Progressive Web App support
-- Architecture designed for hundreds of continuously changing objects
-
-## Architecture
-
-```text
-Edge/LiDAR System
-       ↓
-Detection & Tracking (normalized output)
-       ↓
-Python Edge Simulator
-       ↓
-Node.js Streaming Gateway
-       ↓
-WebSocket Streams
-       ↓
-React Application
-       ↓
-ArcGIS 3D Scene
-```
-
-## Repository Structure
-
-```text
-harborwatch-3d/
-├── apps/
-│   ├── web/                 # React + TypeScript + Vite frontend
-│   └── api/                 # Node.js + Express backend
-├── services/
-│   └── edge-simulator/      # Python edge system simulator
-├── packages/
-│   ├── contracts/           # Shared TypeScript interfaces
-│   ├── auth/                # Authentication utilities
-│   └── telemetry/           # Telemetry and logging
-├── infra/                   # Docker and deployment configuration
-├── tests/                   # Integration and end-to-end tests
-├── docs/                    # Architecture, security, and deployment docs
-├── docker-compose.yml
-└── .github/workflows/       # CI/CD pipelines
-```
-
-## Quick Start
-
-### Prerequisites
-
-- Node.js 18+
-- Python 3.9+
-- Docker and Docker Compose
-- ArcGIS Developer Account or API key
-
-### Local Development
+## Run it
 
 ```bash
 git clone https://github.com/aurelius-in/harborwatch-3d.git
 cd harborwatch-3d
 cp .env.example .env
-# Edit .env with your ArcGIS API key and local configuration
-docker compose up
+docker compose up --build
 ```
 
-Expected local endpoints:
+Open [http://localhost:3000](http://localhost:3000).
 
-- Frontend: http://localhost:3000
-- API: http://localhost:5000
-- Edge simulator: http://localhost:8000
+| Process | URL |
+|---|---|
+| Console | http://localhost:3000 |
+| API | http://localhost:5000 |
+| Simulator health | http://localhost:8000/health |
 
-## Technology Stack
+### Demo accounts
 
-### Frontend
+| Role | Email | Password |
+|---|---|---|
+| Viewer | `viewer@harborwatch.local` | `viewer` |
+| Operator | `operator@harborwatch.local` | `operator` |
+| Admin | `admin@harborwatch.local` | `admin` |
 
-- React 18, TypeScript, and Vite
-- ArcGIS Maps SDK for JavaScript
-- Responsive CSS/Tailwind-ready styling
-- PWA manifest and service worker
-- Vitest and React Testing Library
+Viewer is read-only. Operator can acknowledge alerts and query track history. Admin includes configuration and audit writes.
 
-### Backend
+### Without Docker
 
-- Node.js, Express, and TypeScript
-- WebSocket streaming
-- PostgreSQL-ready persistence
-- JWT and OAuth/OIDC-ready authentication
-- Structured logging and health endpoints
-
-### Edge Simulator
-
-- Python 3.9+
-- AsyncIO
-- WebSocket client
-- Simulated LiDAR-derived track and telemetry generation
-
-### Infrastructure
-
-- Docker and Docker Compose
-- GitHub Actions CI/CD
-- Kubernetes-ready deployment configuration
-
-## Core Contracts
-
-The shared contract package defines the interfaces between edge, application, and GIS components.
-
-```typescript
-interface TrackUpdate {
-  track_id: string;
-  object_type: "vessel" | "vehicle" | "person" | "unknown";
-  latitude: number;
-  longitude: number;
-  altitude: number;
-  speed_mps: number;
-  heading: number;
-  confidence: number;
-  sensor_id: string;
-  timestamp: string;
-  last_seen: string;
-}
-
-interface SensorTelemetry {
-  sensor_id: string;
-  site_id: string;
-  status: "operational" | "degraded" | "offline";
-  temperature_c: number;
-  humidity_percent: number;
-  visibility_meters: number;
-  wind_speed_mps: number;
-  wind_direction: number;
-  battery_percent?: number;
-  timestamp: string;
-}
+```bash
+npm install
+pip install -r services/edge-simulator/requirements.txt
+# API defaults to in-memory storage when DATABASE_URL is unset or memory://
+npm run dev
 ```
 
-## Roles
+In a second terminal:
 
-- **Viewer**: Read-only access to tracks and telemetry
-- **Operator**: Can acknowledge alerts, manage sites, and view history
-- **Admin**: Full configuration, user management, and audit-log access
+```bash
+npm run dev:sim
+```
 
-## Design Principles
+Set `VITE_ARCGIS_API_KEY` (and `ARCGIS_API_KEY`) to bind ArcGIS SceneView. With no key, the console uses the built-in 3D harbor scene so the demo is never an empty map.
 
-- Track IDs and incremental updates instead of recreating objects
-- WebSockets instead of polling for live data
-- Server-side subscriptions and client-side throttling
-- Bounded track history and stale-track expiration
-- Reconnection handling with timestamps and sequence numbers
-- Shared schemas between edge, API, and frontend teams
-- Adaptive presentation: persistent sidebar on desktop, drawer on tablet, bottom sheet on phone
+## What you should see
+
+- 20 to 100 movers classified as vessel, vehicle, person, or unknown
+- Trails, click-to-inspect (id, class, speed, heading, confidence, last update, sensor)
+- Left and right ops panels: sensors, environment, connection, tracks, alerts
+- Layer toggles: Object Tracks, Track History, Sensors, Environmental Data, Restricted Zones, Device Locations
+- Desktop sidebar, tablet drawer, phone bottom sheet
+- Live reconnect when the socket drops
+
+## Architecture
+
+```text
+LiDAR / edge hardware
+        |
+Detection and tracking
+        |
+Normalized TrackUpdate events
+        |
+Python edge simulator  ->  Node streaming gateway  ->  WebSocket
+                                                       |
+                                                     React PWA
+                                                       |
+                                      ArcGIS SceneView or 3D harbor fallback
+```
+
+| Package | Role |
+|---|---|
+| `apps/web` | React 18, TypeScript, Vite, PWA, 3D console |
+| `apps/api` | Node.js, Express, WebSockets, JWT, PostgreSQL |
+| `services/edge-simulator` | Python AsyncIO producer (separate process on purpose) |
+| `packages/contracts` | Shared schemas (`TrackUpdate`, telemetry, session) |
+| `packages/auth` | Local JWT adapter, OIDC-ready helpers |
+| `packages/telemetry` | Structured JSON logs and in-process metrics |
+
+REST: `GET /api/sites`, `/api/sensors`, `/api/tracks/:id/history`, `/api/user`, `/api/health`.  
+Sockets: `/ws/tracks`, `/ws/telemetry`, `/ws/status`.
+
+## Design rules
+
+- Stable `track_id` values. The map updates a track. It does not spawn a new object every tick.
+- WebSockets for live motion. REST for session, config, and sampled history.
+- Sequence numbers win over wall clocks.
+- Stale at 15 s, expire at 45 s. History remains queryable.
+- The API is the authorization boundary. The UI only reflects it.
 
 ## Palette
 
-Taken from [`hw3d-logo.png`](./hw3d-logo.png). No gold.
+From [`hw3d-logo.png`](./hw3d-logo.png). No gold. Animated mark: [`hw3d-logo-loop.gif`](./hw3d-logo-loop.gif).
 
-| Token | Hex |
-|---|---|
-| Navy (wordmark) | `#002C54` |
-| Sea | `#006098` |
-| Teal (3D accent) | `#00A0B8` |
-| Beam | `#ACE0E8` |
-| Mist | `#E8F8F8` |
+| Token | Hex | Use |
+|---|---|---|
+| Navy | `#002C54` | Wordmark, chrome, application core |
+| Sea | `#006098` | Edge, sensors, secondary fills |
+| Teal | `#00A0B8` | Live accent (the 3D) |
+| Beam | `#ACE0E8` | Highlights, contract nodes |
+| Mist | `#E8F8F8` | Light docs and diagram fill |
+| Deep navy | `#002850` | Night panels |
 
 ## Documentation
 
 - [Documentation index](./docs/README.md)
 - [Architecture overview](./docs/architecture/overview.md)
-- [Data flow](./docs/architecture/data-flow.md)
+- [Contracts](./docs/architecture/contracts.md)
+- [Realtime streaming](./docs/architecture/realtime-streaming.md)
 - [Security](./docs/architecture/security.md)
 - [Deployment](./docs/architecture/deployment.md)
-- [System diagrams](./docs/diagrams/system-overview.md)
 
-## Project Scope
+## Tests and CI
 
-HarborWatch 3D is a public reference implementation. It uses simulated LiDAR-derived tracks and does not claim to represent any specific defense, government, or proprietary system. The focus is the application and systems-integration boundary: normalized sensor events, streaming services, WebSockets, React, and real-time ArcGIS 3D visualization.
+```bash
+npm test
+npm run typecheck
+npm run build
+```
 
-## Roadmap
-
-- [ ] Multi-site geographic filtering
-- [ ] Historical track playback
-- [ ] Geofenced/restricted-zone alerts
-- [ ] Advanced track-fusion demonstrations
-- [ ] Cloud storage integration
-- [ ] SIEM integration example
+GitHub Actions runs typecheck, unit/contract tests, Python contract tests, and the web build on every push to `main`.
 
 ## License
 
-MIT License. See [LICENSE](./LICENSE).
+MIT. See [LICENSE](./LICENSE).
